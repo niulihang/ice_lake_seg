@@ -1,0 +1,8 @@
+#ignore these files
+
+/wandb/
+/checkpoints/
+.idea/
+__pycache__/
+
+*.pth
