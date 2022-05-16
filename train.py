@@ -1,4 +1,3 @@
-import argparse
 import logging
 import sys
 from pathlib import Path
@@ -15,15 +14,17 @@ from utils.data_loading import BasicDataset, S2Dataset
 from utils.dice_score import dice_loss
 from evaluate import evaluate
 from model.unet import UNet
+from model.mod_att_unet import ModAttUnet
 import global_var
 
 dir_img = global_var.TRAIN_S2_PATH
 dir_mask = global_var.TRAIN_MASKS_PATH
 dir_checkpoint = Path('checkpoints')
-project_name = 'U-Net'
+
 
 def train_net(net,
               device,
+              project_name,
               epochs: int = 5,
               batch_size: int = 1,
               learning_rate: float = 0.001,
@@ -145,7 +146,7 @@ def train_net(net,
             logging.info(f'Checkpoint {epoch + 1} saved!')
 
 
-if __name__ == '__main__':
+def run_rain(project_name):
     # 参数设置
     n_channels = 13
     n_classes = 2
@@ -162,7 +163,11 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Using device {device}')
 
-    net = UNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
+    net = None
+    if project_name == 'U-Net':
+        net = UNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
+    else:
+        net = ModAttUnet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
@@ -182,8 +187,15 @@ if __name__ == '__main__':
                   device=device,
                   img_scale=scale,
                   val_percent=val_percent,
-                  amp=amp)
+                  amp=amp,
+                  project_name=project_name)
     except KeyboardInterrupt:
         torch.save(net.state_dict(), 'INTERRUPTED.pth')
         logging.info('Saved interrupt')
         sys.exit(0)
+
+
+if __name__ == '__main__':
+    project_name_list = ['U-Net', 'Mod_Att_U-Net']
+    for proj_name in project_name_list:
+        run_rain(proj_name)
