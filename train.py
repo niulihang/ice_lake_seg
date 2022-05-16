@@ -75,6 +75,10 @@ def train_net(net,
     global_step = 0
 
     # 5. Begin training
+    min_loss = 100
+    min_loss_epoch = 0
+    max_val = 0
+    max_val_epoch = 0
     for epoch in range(epochs):
         net.train()
         epoch_loss = 0
@@ -114,6 +118,10 @@ def train_net(net,
                     'epoch': epoch
                 })
                 pbar.set_postfix(**{'loss (batch)': loss.item()})
+                # 记录损失函数最小值和它的epoch
+                if min_loss > loss.item():
+                    min_loss = loss.item()
+                    min_loss_epoch = epoch
 
                 # Evaluation round
                 # if global_step % (n_train // (10 * batch_size)) == 0:
@@ -125,6 +133,11 @@ def train_net(net,
 
             val_score = evaluate(net, val_loader, device)
             # scheduler.step(val_score)
+
+            # 记录验证最高得分和它的epoch
+            if max_val < val_score:
+                max_val = val_score
+                max_val_epoch = epoch
 
             logging.info('Validation Dice score: {}'.format(val_score))
             experiment.log({
@@ -144,6 +157,13 @@ def train_net(net,
             Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
             torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch + 1)))
             logging.info(f'Checkpoint {epoch + 1} saved!')
+
+    experiment.log({
+        'min_loss': min_loss,
+        'min_loss_epoch': min_loss_epoch,
+        'max_val': max_val,
+        'max_val_epoch': max_val_epoch
+    })
 
 
 def run_rain(project_name):
