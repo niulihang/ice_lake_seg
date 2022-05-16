@@ -1,6 +1,6 @@
-from unet_parts import *
-from attention.eca import EcaBlock
-from attention.cbam import SpatialAttention
+from .unet_parts import *
+from .attention.eca import EcaBlock
+from .attention.cbam import SpatialAttention
 
 
 class AttentionBlock(nn.Module):

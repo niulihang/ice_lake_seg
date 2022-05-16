@@ -19,7 +19,7 @@ import global_var
 
 dir_img = global_var.TRAIN_S2_PATH
 dir_mask = global_var.TRAIN_MASKS_PATH
-dir_checkpoint = Path('checkpoints')
+dir_checkpoint = r'checkpoints'
 
 
 def train_net(net,
@@ -143,7 +143,7 @@ def train_net(net,
             experiment.log({
                 'learning rate': optimizer.param_groups[0]['lr'],
                 'validation Dice': val_score,
-                'images': wandb.Image(images[0].cpu()),
+                # 'images': wandb.Image(images[0].cpu()),
                 'masks': {
                     'true': wandb.Image(true_masks[0].float().cpu()),
                     'pred': wandb.Image(torch.softmax(masks_pred, dim=1)[0].float().cpu()),
@@ -154,8 +154,9 @@ def train_net(net,
             })
 
         if save_checkpoint:
-            Path(dir_checkpoint).mkdir(parents=True, exist_ok=True)
-            torch.save(net.state_dict(), str(dir_checkpoint / 'checkpoint_epoch{}.pth'.format(epoch + 1)))
+            chck_path = Path(dir_checkpoint + '\\' + project_name)
+            Path(chck_path).mkdir(parents=True, exist_ok=True)
+            torch.save(net.state_dict(), str(chck_path / 'checkpoint_epoch{}.pth'.format(epoch + 1)))
             logging.info(f'Checkpoint {epoch + 1} saved!')
 
     experiment.log({
@@ -217,5 +218,6 @@ def run_rain(project_name):
 
 if __name__ == '__main__':
     project_name_list = ['U-Net', 'Mod_Att_U-Net']
+    # project_name_list = ['Mod_Att_U-Net']
     for proj_name in project_name_list:
         run_rain(proj_name)
