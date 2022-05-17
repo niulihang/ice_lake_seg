@@ -159,12 +159,10 @@ def train_net(net,
             torch.save(net.state_dict(), str(chck_path / 'checkpoint_epoch{}.pth'.format(epoch + 1)))
             logging.info(f'Checkpoint {epoch + 1} saved!')
 
-    experiment.log({
-        'min_loss': min_loss,
-        'min_loss_epoch': min_loss_epoch,
-        'max_val': max_val,
-        'max_val_epoch': max_val_epoch
-    })
+    logging.info(f"min_loss: {min_loss}, "
+                 f"min_loss_epoch: {min_loss_epoch}, "
+                 f"max_val: {max_val}, "
+                 f"max_val_epoch: {max_val_epoch}")
 
 
 def run_rain(project_name):
@@ -217,7 +215,8 @@ def run_rain(project_name):
 
 
 if __name__ == '__main__':
-    project_name_list = ['U-Net', 'Mod_Att_U-Net']
+    # project_name_list = ['U-Net', 'Mod_Att_U-Net']
     # project_name_list = ['Mod_Att_U-Net']
+    project_name_list = ['U-Net']
     for proj_name in project_name_list:
         run_rain(proj_name)

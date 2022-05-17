@@ -22,6 +22,7 @@ from PIL import Image
 import pandas as pd
 from geopandas import GeoDataFrame
 from shapely.geometry import shape
+import global_var
 
 ###############################################################################
 
@@ -36,7 +37,9 @@ bin_colormap = [0, 0, 0] + [255, 255, 255] * 254
 # Reading in the bands and Resampling to correct resolution where neccessary
 # for Sentinel 2 which uses Bands 3 (Green) and 8 (NIR) for NDWI
 
-for imagePath in glob.glob('../data/original/S2*_MSIL1C_***.SAFE/GRANULE/L1C_**/IMG_DATA/'):
+
+
+for imagePath in glob.glob(global_var.DATASETS_PATH + r'\original\S2*_MSIL1C_***.SAFE\GRANULE\L1C_**\IMG_DATA' + '\\'):
     # glob allows correct files to be selected, [2,-2]
     # bands 3 & 8 for NDWI
     band3Path = str(glob.glob(imagePath + '*_B03.jp2'))[2:-2]

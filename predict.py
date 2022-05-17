@@ -10,10 +10,11 @@ from torchvision import transforms
 import rasterio
 
 from utils.data_loading import BasicDataset
-from unet import UNet
+from model.unet import UNet
 from utils.utils import plot_img_and_mask
 
 import glob
+
 
 def predict_img(net,
                 full_img,
