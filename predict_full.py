@@ -11,6 +11,7 @@ from PIL import Image
 
 from model.unet import UNet
 from predict import predict_img
+from model.mod_att_unet import ModAttUnet
 
 
 def full_to_crop(s2_path):
@@ -67,8 +68,8 @@ SET_Y_SHAPE = 10980
 S2_DIR = r'D:\data\s-2\2022'
 
 
-net = UNet(n_channels=13, n_classes=2, atrous_rates=(2, 4, 8, 12))
-net_path = 'checkpoints/unet_aspp_epoch114.pth'
+net = ModAttUnet(n_channels=13, n_classes=2)
+net_path = 'checkpoints/modattunet_epoch102_0519.pth'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 net.to(device=device)
 net.load_state_dict(torch.load(net_path, map_location=device))
