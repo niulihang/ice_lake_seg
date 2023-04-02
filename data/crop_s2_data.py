@@ -10,7 +10,9 @@ from PIL import Image
 # PNG_PATH = '../data/original/S2B_MSIL1C_20210131T041729_N0209_R061_T42CVD_20210131T072137_RGB.png'
 # S2_PATH = '../data/original/S2B_MSIL1C_20210131T041729_N0209_R061_T42CVD_20210131T072137.SAFE'
 
-CROP_SIZE = 128
+# CROP_SIZE = 128 # mine crop size
+# CROP_SIZE = 572 # original U-Net crop size
+CROP_SIZE = 480 # Dirscherl crop size
 # CROP_AREA = CROP_SIZE * CROP_SIZE
 SET_X_SHAPE = 10980
 SET_Y_SHAPE = 10980
@@ -21,15 +23,15 @@ Image.MAX_IMAGE_PIXELS = 120560400
 bin_colormap = [0, 0, 0] + [255, 255, 255] * 254
 
 # 裁剪label
-for s2_img_path in glob.glob('../data/original/S2*_MSIL1C_***.SAFE'):
+for s2_img_path in glob.glob('D:/data/s-2/model_datasets/original/S2*_MSIL1C_***.SAFE'):
 # for s2_img_path in glob.glob('../data/original/S2B_MSIL1C_20200119T131859_N0208_R095_T19DEA_20200119T142732.SAFE'):
-    s2_name = s2_img_path[17:]
+    s2_name = s2_img_path[36:]
     label_name = 'Lake_' + s2_name[:26] + s2_name[37:44] + '.png'
     png_name = s2_name[:-5] + '_RGB.png'
 
-    label_path = '../data/original/' + label_name
-    s2_path = '../data/original/' + s2_name
-    png_path = '../data/original/' + png_name
+    label_path = r'D:/data/s-2/model_datasets/original/' + label_name
+    s2_path = r'D:/data/s-2/model_datasets/original/' + s2_name
+    png_path = r'D:/data/s-2/model_datasets/original/' + png_name
 
     print(f'{s2_name} start')
     crop_pos = []  # [[x_start, x_end, y_start, y_end]]
@@ -72,7 +74,7 @@ for s2_img_path in glob.glob('../data/original/S2*_MSIL1C_***.SAFE'):
                 label_crop = label_crop.astype(np.uint8)
                 label_save = Image.fromarray(label_crop, 'P')
                 label_save.putpalette(bin_colormap)
-                label_save.save(f'../data/preprocess/masks/label_{count}.png')
+                label_save.save(f'D:/data/s-2/model_datasets/preprocess_480/masks/label_{count}.png')
                 label_save.close()
     print(f'label crop done.')
 
@@ -111,7 +113,7 @@ for s2_img_path in glob.glob('../data/original/S2*_MSIL1C_***.SAFE'):
                                      'constant', constant_values=0)
                 new_img = new_img.astype(np.uint8)
                 new_img_save = Image.fromarray(new_img, 'RGBA')
-                new_img_save.save(f'../data/preprocess/imgs/img_{ct + count_start + 1}.png')
+                new_img_save.save(f'D:/data/s-2/model_datasets/preprocess_480/imgs/img_{ct + count_start + 1}.png')
                 new_img_save.close()
                 bands_crop = all_bands[:, x_start:x_end, y_start:y_end]
                 x_len = bands_crop.shape[1]
@@ -120,7 +122,7 @@ for s2_img_path in glob.glob('../data/original/S2*_MSIL1C_***.SAFE'):
                     print(f'第{ct + count_start + 1}个s2需要填充')
                     bands_crop = np.pad(bands_crop, ((0, 0), (0, CROP_SIZE - x_len), (0, CROP_SIZE - y_len)),
                                         'constant', constant_values=0)
-                np.save(f'../data/preprocess/s2/s2_{ct + count_start + 1}.npy', bands_crop)
+                np.save(f'D:/data/s-2/model_datasets/preprocess_480/s2/s2_{ct + count_start + 1}.npy', bands_crop)
         count_start = count
 
     print(f'png and s2 data crop done.')

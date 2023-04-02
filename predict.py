@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 
+import gdal
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -12,6 +13,8 @@ import rasterio
 from utils.data_loading import BasicDataset
 from model.unet import UNet
 from utils.utils import plot_img_and_mask
+from model.mod_att_unet import ModAttUnet
+import global_var
 
 import glob
 
@@ -47,91 +50,39 @@ def predict_img(net,
         return (full_mask > out_threshold).numpy()
     else:
         return F.one_hot(full_mask.argmax(dim=0), net.n_classes).permute(2, 0, 1).numpy()
-
-
-def get_args():
-    parser = argparse.ArgumentParser(description='Predict masks from input images')
-    parser.add_argument('--model', '-m', default='MODEL.pth', metavar='FILE',
-                        help='Specify the file in which the model is stored')
-    parser.add_argument('--input', '-i', metavar='INPUT', nargs='+', help='Filenames of input images', required=True)
-    parser.add_argument('--output', '-o', metavar='INPUT', nargs='+', help='Filenames of output images')
-    parser.add_argument('--viz', '-v', action='store_true',
-                        help='Visualize the images as they are processed')
-    parser.add_argument('--no-save', '-n', action='store_true', help='Do not save the output masks')
-    parser.add_argument('--mask-threshold', '-t', type=float, default=0.5,
-                        help='Minimum probability value to consider a mask pixel white')
-    parser.add_argument('--scale', '-s', type=float, default=0.5,
-                        help='Scale factor for the input images')
-
-    return parser.parse_args()
-
-
-def get_output_filenames(args):
-    def _generate_name(fn):
-        split = os.path.splitext(fn)
-        return f'{split[0]}_OUT{split[1]}'
-
-    return args.output or list(map(_generate_name, args.input))
-
-
-def mask_to_image(mask: np.ndarray):
-    if mask.ndim == 2:
-        return Image.fromarray((mask * 255).astype(np.uint8))
-    elif mask.ndim == 3:
-        return Image.fromarray((np.argmax(mask, axis=0) * 255 / mask.shape[0]).astype(np.uint8))
  
 
 if __name__ == '__main__':
-    # args = get_args()
-    model = 'checkpoints/checkpoint_epoch200.pth'
-    # input_img = ['data/train/s2/s2_13.npy']
-    # output_img = ['label_pred_13.png']
-    input_img = glob.glob('data/test/s2/s2_*.npy')
-    output_img = ['data/test/predict']
-    no_save = False
-    scale = 1.0
-    n_channels = 13
-    n_classes = 2
-    mask_threshold = 0.5
-    viz = False
-
-    in_files = input_img
-    out_files = output_img
-
-    net = UNet(n_channels=n_channels, n_classes=n_classes)
-
+    net = ModAttUnet(n_channels=13, n_classes=2)
+    net_path = 'checkpoints/modattunet_epoch102_0519.pth'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logging.info(f'Loading model {model}')
-    logging.info(f'Using device {device}')
-
     net.to(device=device)
-    net.load_state_dict(torch.load(model, map_location=device))
+    net.load_state_dict(torch.load(net_path, map_location=device))
 
-    logging.info('Model loaded!')
+    input_imgs = glob.glob(global_var.TEST_S2_PATH + r'\*.npy')
+    print(f'{len(input_imgs)} s2 imgs')
+    output_imgs = global_var.TEST_PATH + r'\predict_masks'
+    if not os.path.exists(output_imgs):
+        os.makedirs(output_imgs)
 
-    for i, filename in enumerate(in_files):
-        logging.info(f'\nPredicting image {filename} ...')
-        # img = Image.open(filename)
-        index = os.path.basename(filename).split('_')[1].split('.')[0]
-        img = np.load(filename)
-        mask = predict_img(net=net,
-                           full_img=img,
-                           scale_factor=scale,
-                           out_threshold=mask_threshold,
-                           device=device)
+    for s2_path in input_imgs:
+        print(f'predict {s2_path}')
+        s2_np = np.load(s2_path)
+        mask_index = os.path.basename(s2_path).split('.')[0].split('_')[1]
+        save_path = output_imgs + rf'\label_{mask_index}.tif'
+        print(f'save to {save_path}')
 
-        if not no_save:
-            out_filename = out_files[0] + f'/predict_{index}.png'
-            # result = mask_to_image(mask)
-            # result.save(out_filename)
-            result = np.argmax(mask, axis=0)
-            result = result[np.newaxis, ...]
-            with rasterio.open(out_filename, 'w', driver='PNG',
-                               width=result.shape[1], height=result.shape[2], count=result.shape[0],
-                               dtype='uint8', nodata=0) as dst:
-                dst.write(result.astype(np.uint8))
-            logging.info(f'Mask saved to {out_filename}')
+        mask_pred = predict_img(net=net,
+                                full_img=s2_np,
+                                scale_factor=1.0,
+                                out_threshold=0.5,
+                                device=device)
+        mask_pred = np.argmax(mask_pred, axis=0)
+        print(f'{mask_pred.shape}')
 
-        if viz:
-            logging.info(f'Visualizing results for image {filename}, close to continue...')
-            plot_img_and_mask(img, mask)
+        driver = gdal.GetDriverByName('GTIFF')
+        img_out = driver.Create(save_path, mask_pred.shape[0], mask_pred.shape[1],
+                                1, gdal.GDT_Float32)
+        img_out.GetRasterBand(1).WriteArray(mask_pred)
+        img_out.FlushCache()
+        img_out = None

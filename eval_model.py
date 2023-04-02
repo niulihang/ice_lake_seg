@@ -10,6 +10,8 @@ from skimage import morphology
 import torch
 from model.mod_att_unet import ModAttUnet
 from model.unet import UNet
+from model.fcn import VGG_fcn32s as FCN
+from model.segnet import SegNet
 
 
 def conf_matrix(mask_true, mask_pred, num_class):
@@ -217,8 +219,14 @@ if __name__ == '__main__':
         net_name = os.path.basename(net_path).split('_')[0]
         if net_name == 'modattunet':
             net = ModAttUnet(n_channels=13, n_classes=2)
-        else:
+        elif net_name == 'unet':
             net = UNet(n_channels=13, n_classes=2)
+        elif net_name == 'fcn':
+            net = FCN()
+        elif net_name == 'segnet':
+            net = SegNet()
+        else:
+            raise Exception('未识别的net_name {}'.format(net_name))
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         net.to(device=device)
         net.load_state_dict(torch.load(net_path, map_location=device))

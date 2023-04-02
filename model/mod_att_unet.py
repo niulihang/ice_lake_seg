@@ -75,10 +75,15 @@ class ModAttUnet(nn.Module):
 
     def forward(self, x):
         x1 = self.inc(x)
+        # print(x1.shape)
         x2 = self.down1(x1)
+        # print(x2.shape)
         x3 = self.down2(x2)
+        # print(x3.shape)
         x4 = self.down3(x3)
+        # print(x4.shape)
         x5 = self.down4(x4)
+        # print(x5.shape)
 
         g1 = self.att_up1(x5)
         x4 = self.att1(xl=x4, g=g1)
@@ -103,6 +108,6 @@ class ModAttUnet(nn.Module):
 if __name__ == '__main__':
     tensor = torch.randn((2, 13, 128, 128))
     att_unet = ModAttUnet(n_channels=13, n_classes=2)
-    print(att_unet)
+    # print(att_unet)
     out_tensor = att_unet(tensor)
     print(out_tensor.shape)

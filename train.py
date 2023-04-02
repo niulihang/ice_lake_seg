@@ -16,6 +16,8 @@ from evaluate import evaluate
 from model.unet import UNet
 from model.mod_att_unet import ModAttUnet
 import global_var
+from model.fcn import VGG_fcn32s as FCN
+from model.segnet import SegNet
 
 dir_img = global_var.TRAIN_S2_PATH
 dir_mask = global_var.TRAIN_MASKS_PATH
@@ -87,10 +89,10 @@ def train_net(net,
                 images = batch['image']
                 true_masks = batch['mask']
 
-                assert images.shape[1] == net.n_channels, \
-                    f'Network has been defined with {net.n_channels} input channels, ' \
-                    f'but loaded images have {images.shape[1]} channels. Please check that ' \
-                    'the images are loaded correctly.'
+                # assert images.shape[1] == net.n_channels, \
+                #     f'Network has been defined with {net.n_channels} input channels, ' \
+                #     f'but loaded images have {images.shape[1]} channels. Please check that ' \
+                #     'the images are loaded correctly.'
 
                 images = images.to(device=device, dtype=torch.float32)
                 true_masks = true_masks.to(device=device, dtype=torch.long)
@@ -165,7 +167,7 @@ def train_net(net,
                  f"max_val_epoch: {max_val_epoch}")
 
 
-def run_rain(project_name):
+def run_train(project_name):
     # 参数设置
     n_channels = 13
     n_classes = 2
@@ -185,13 +187,20 @@ def run_rain(project_name):
     net = None
     if project_name == 'U-Net':
         net = UNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
-    else:
+    elif project_name == "Mod_U-Net":
         net = ModAttUnet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear)
+    elif project_name == "FCN":
+        net = FCN()
+    elif project_name == "SegNet":
+        net = SegNet()
+    else:
+        raise Exception('未识别的project_name {}'.format(project_name))
 
-    logging.info(f'Network:\n'
-                 f'\t{net.n_channels} input channels\n'
-                 f'\t{net.n_classes} output channels (classes)\n'
-                 f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
+
+    # logging.info(f'Network:\n'
+    #              f'\t{net.n_channels} input channels\n'
+    #              f'\t{net.n_classes} output channels (classes)\n'
+    #              f'\t{"Bilinear" if net.bilinear else "Transposed conv"} upscaling')
 
     if load:
         net.load_state_dict(torch.load(load, map_location=device))
@@ -217,6 +226,7 @@ def run_rain(project_name):
 if __name__ == '__main__':
     # project_name_list = ['U-Net', 'Mod_Att_U-Net']
     # project_name_list = ['Mod_Att_U-Net']
-    project_name_list = ['U-Net']
+    project_name_list = ['FCN']
+    # project_name_list = ['SegNet']
     for proj_name in project_name_list:
-        run_rain(proj_name)
+        run_train(proj_name)

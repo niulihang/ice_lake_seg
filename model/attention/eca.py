@@ -25,9 +25,12 @@ class EcaBlock(nn.Module):
 
     def forward(self, x):
         b, c, h, w = x.size()
+        # print(f'eca x shape {x.shape}')
         avg_pool_out = self.avg_pool(x).view(b, 1, c)
+        # print(f'eca avg pool shape {avg_pool_out.shape}')
         out = self.conv(avg_pool_out)
         out = self.sigmoid(out).view(b, c, 1, 1)
+        # print(f'eca out shape {out.shape}')
         return out * x
 
 

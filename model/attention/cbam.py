@@ -36,10 +36,15 @@ class SpatialAttention(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        # print(f'x shape {x.shape}')
         max_pool_out, _ = torch.max(x, dim=1, keepdim=True)
+        # print(f'max pool shape {max_pool_out.shape}')
         avg_pool_out = torch.mean(x, dim=1, keepdim=True)
+        # print(f'avg pool shape {avg_pool_out.shape}')
         max_avg_cat = torch.cat((max_pool_out, avg_pool_out), dim=1)
+        # print(f'max_avg_cat shape {max_avg_cat.shape}')
         out = self.conv(max_avg_cat)
+        # print(f'after conv out shape {out.shape}')
         return self.sigmoid(out)
 
 
